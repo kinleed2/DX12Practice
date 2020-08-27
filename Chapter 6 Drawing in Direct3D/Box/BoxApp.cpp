@@ -25,6 +25,7 @@ struct Vertex
 struct ObjectConstants
 {
     XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
+	FLOAT gTime;
 };
 
 class BoxApp : public D3DApp
@@ -52,15 +53,20 @@ private:
     void BuildShadersAndInputLayout();
     void BuildBoxGeometry();
     void BuildPSO();
-    //TODO: Practice 2
-    void Practice2();
-	D3D12_VERTEX_BUFFER_VIEW vertexBuffer[2] = {};
-	std::vector<D3D12_INPUT_ELEMENT_DESC> vertexData =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-	};
-	D3D12_INDEX_BUFFER_VIEW ibv;
+    
+	//TODO: Practice 4
+	void BuildTriangleGeometry();
+	//
+
+	//TODO: Practice 2
+    //void Practice2();
+	//D3D12_VERTEX_BUFFER_VIEW vertexBuffer[2] = {};
+	//std::vector<D3D12_INPUT_ELEMENT_DESC> vertexData =
+	//{
+	//	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	//	{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+	//};
+	//D3D12_INDEX_BUFFER_VIEW ibv;
 	//
 
 private:
@@ -71,6 +77,10 @@ private:
     std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 
 	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
+	
+	//TODO: Practice 4
+	std::unique_ptr<MeshGeometry> mTriangleGeo = nullptr;
+	//
 
     ComPtr<ID3DBlob> mvsByteCode = nullptr;
     ComPtr<ID3DBlob> mpsByteCode = nullptr;
@@ -135,7 +145,15 @@ bool BoxApp::Initialize()
     BuildRootSignature();
     BuildShadersAndInputLayout();
     BuildBoxGeometry();
-	Practice2();
+	
+	//TODO: Practice 2
+	//Practice2();
+	//
+
+	//TODO: Practice 4
+	//BuildTriangleGeometry();
+	//
+
     BuildPSO();
 
     // Execute the initialization commands.
@@ -160,6 +178,8 @@ void BoxApp::OnResize()
 
 void BoxApp::Update(const GameTimer& gt)
 {
+
+
     // Convert Spherical to Cartesian coordinates.
     float x = mRadius*sinf(mPhi)*cosf(mTheta);
     float z = mRadius*sinf(mPhi)*sinf(mTheta);
@@ -180,7 +200,12 @@ void BoxApp::Update(const GameTimer& gt)
 	// Update the constant buffer with the latest worldViewProj matrix.
 	ObjectConstants objConstants;
     XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
-    mObjectCB->CopyData(0, objConstants);
+	
+	//TODO: Practice 5
+	objConstants.gTime = gt.TotalTime();
+    //
+	
+	mObjectCB->CopyData(0, objConstants);
 }
 
 void BoxApp::Draw(const GameTimer& gt)
@@ -212,24 +237,35 @@ void BoxApp::Draw(const GameTimer& gt)
 
 	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
-	//mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
-	//mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
+	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
+	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
 	
 	//TODO: Practice 2
-	mCommandList->IASetVertexBuffers(0, 2, vertexBuffer);
+	//mCommandList->IASetVertexBuffers(0, 2, vertexBuffer);
 	//mCommandList->IASetIndexBuffer(&ibv);
 	//
-	
-	mCommandList->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    
+	    
+	//TODO: Practice 3
+	//mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
+	//
+
+	//TODO: Practice 4
+	//mCommandList->IASetVertexBuffers(0, 1, &mTriangleGeo->VertexBufferView());
+	//mCommandList->IASetIndexBuffer(&mTriangleGeo->IndexBufferView());
+	//
+
+	mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
     mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
 
-    //mCommandList->DrawIndexedInstanced(
-	//	mBoxGeo->DrawArgs["box"].IndexCount, 
-	//	1, 0, 0, 0);
+	mCommandList->DrawIndexedInstanced(mBoxGeo->DrawArgs["box"].IndexCount, 1, 0, 0, 0);
 
 	//TODO: Practice 2
 	//mCommandList->DrawInstanced(8, 1, 0, 0);
+	//
+
+	//TODO: Practice 4
+	//mCommandList->DrawIndexedInstanced(mTriangleGeo->DrawArgs["triangle"].IndexCount, 1, 0, 0, 0);
 	//
 
     // Indicate a state transition on the resource usage.
@@ -471,10 +507,10 @@ void BoxApp::BuildPSO()
 {
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
     ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-    //psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
+    psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };
 	
 	//TODO: Practice 2
-	psoDesc.InputLayout = { vertexData.data(), (UINT)vertexData.size() };
+	//psoDesc.InputLayout = { vertexData.data(), (UINT)vertexData.size() };
 	//
 
     psoDesc.pRootSignature = mRootSignature.Get();
@@ -493,7 +529,12 @@ void BoxApp::BuildPSO()
     psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    psoDesc.NumRenderTargets = 1;
+	
+	//TODO: Practice 3
+	//psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    //
+	
+	psoDesc.NumRenderTargets = 1;
     psoDesc.RTVFormats[0] = mBackBufferFormat;
     psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;
     psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
@@ -502,102 +543,166 @@ void BoxApp::BuildPSO()
 }
 
 //TODO: Practice 2
-void BoxApp::Practice2()
+//void BoxApp::Practice2()
+//{
+//	struct VPosData
+//	{
+//		XMFLOAT3 Pos;
+//	};
+//
+//	struct VColorData
+//	{
+//		XMFLOAT4 Color;
+//	};
+//    
+//	std::array<VPosData, 8> pos =
+//	{
+//		VPosData{ XMFLOAT3(-1.0f, -1.0f, -1.0f)},
+//		VPosData{ XMFLOAT3(-1.0f, +1.0f, -1.0f)},
+//		VPosData{ XMFLOAT3(+1.0f, +1.0f, -1.0f)},
+//		VPosData{ XMFLOAT3(+1.0f, -1.0f, -1.0f)},
+//		VPosData{ XMFLOAT3(-1.0f, -1.0f, +1.0f)},
+//		VPosData{ XMFLOAT3(-1.0f, +1.0f, +1.0f)},
+//		VPosData{ XMFLOAT3(+1.0f, +1.0f, +1.0f)},
+//		VPosData{ XMFLOAT3(+1.0f, -1.0f, +1.0f)}
+//	};
+//
+//	std::array<VColorData, 8> color =
+//	{
+//		VColorData{XMFLOAT4(Colors::White) },
+//		VColorData{XMFLOAT4(Colors::Black) },
+//		VColorData{XMFLOAT4(Colors::Red) },
+//		VColorData{XMFLOAT4(Colors::Green) },
+//		VColorData{XMFLOAT4(Colors::Blue) },
+//		VColorData{XMFLOAT4(Colors::Yellow) },
+//		VColorData{XMFLOAT4(Colors::Cyan) },
+//		VColorData{XMFLOAT4(Colors::Magenta) }
+//	};
+//
+//	std::array<std::uint16_t, 36> indices =
+//	{
+//		// front face
+//		0, 1, 2,
+//		0, 2, 3,
+//
+//		// back face
+//		4, 6, 5,
+//		4, 7, 6,
+//
+//		// left face
+//		4, 5, 1,
+//		4, 1, 0,
+//
+//		// right face
+//		3, 2, 6,
+//		3, 6, 7,
+//
+//		// top face
+//		1, 5, 6,
+//		1, 6, 2,
+//
+//		// bottom face
+//		4, 0, 3,
+//		4, 3, 7
+//	};
+//
+//	const UINT posByteSize = (UINT)pos.size() * sizeof(VPosData);
+//	const UINT colorByteSize = (UINT)color.size() * sizeof(VColorData);
+//	const UINT indexByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+//
+//	ComPtr<ID3D12Resource> VertexPosBufferGPU = nullptr;
+//	ComPtr<ID3D12Resource> VertexPosBufferUploader = nullptr;
+//	
+//
+//	ComPtr<ID3D12Resource> VertexColorBufferGPU = nullptr;
+//	ComPtr<ID3D12Resource> VertexColorBufferUploader = nullptr;
+//
+//	ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
+//	ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
+//
+//	VertexPosBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(), mCommandList.Get(), pos.data(), posByteSize, VertexPosBufferUploader);
+//	VertexColorBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(), mCommandList.Get(), color.data(), colorByteSize, VertexColorBufferUploader);
+//	IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(), mCommandList.Get(), indices.data(), indexByteSize, IndexBufferUploader);
+//
+//
+//	D3D12_VERTEX_BUFFER_VIEW vbvPos;
+//	vbvPos.BufferLocation = VertexPosBufferGPU->GetGPUVirtualAddress();
+//	auto desc = VertexPosBufferGPU->GetDesc();
+//	vbvPos.StrideInBytes = sizeof(VPosData);
+//	vbvPos.SizeInBytes = 8 * sizeof(VPosData);
+//
+//	D3D12_VERTEX_BUFFER_VIEW vbvColor;
+//	vbvColor.BufferLocation = VertexColorBufferGPU->GetGPUVirtualAddress();
+//	vbvColor.StrideInBytes = sizeof(VColorData);
+//	vbvColor.SizeInBytes = 8 * sizeof(VColorData);
+//
+//	ibv.BufferLocation = IndexBufferGPU->GetGPUVirtualAddress();
+//	ibv.Format = DXGI_FORMAT_R16_UINT;
+//	ibv.SizeInBytes = indexByteSize;
+//	
+//	vertexBuffer[0] = vbvPos;
+//	vertexBuffer[1] = vbvColor;
+//}
+
+//TODO: Practice 4
+void BoxApp::BuildTriangleGeometry()
 {
-	struct VPosData
+	std::array<Vertex, 5> vertices =
 	{
-		XMFLOAT3 Pos;
+		Vertex({ XMFLOAT3(+0.0f, +1.0f, +0.0f), XMFLOAT4(Colors::Red) }),
+		Vertex({ XMFLOAT3(-0.5f, -1.0f, +0.5f), XMFLOAT4(Colors::Green) }),
+		Vertex({ XMFLOAT3(+0.5f, -1.0f, +0.5f), XMFLOAT4(Colors::Green) }),
+		Vertex({ XMFLOAT3(+0.5f, -1.0f, -0.5f), XMFLOAT4(Colors::Green) }),
+		Vertex({ XMFLOAT3(-0.5f, -1.0f, -0.5f), XMFLOAT4(Colors::Green) }),
+
 	};
 
-	struct VColorData
-	{
-		XMFLOAT4 Color;
-	};
-    
-	std::array<VPosData, 8> pos =
-	{
-		VPosData{ XMFLOAT3(-1.0f, -1.0f, -1.0f)},
-		VPosData{ XMFLOAT3(-1.0f, +1.0f, -1.0f)},
-		VPosData{ XMFLOAT3(+1.0f, +1.0f, -1.0f)},
-		VPosData{ XMFLOAT3(+1.0f, -1.0f, -1.0f)},
-		VPosData{ XMFLOAT3(-1.0f, -1.0f, +1.0f)},
-		VPosData{ XMFLOAT3(-1.0f, +1.0f, +1.0f)},
-		VPosData{ XMFLOAT3(+1.0f, +1.0f, +1.0f)},
-		VPosData{ XMFLOAT3(+1.0f, -1.0f, +1.0f)}
-	};
-
-	std::array<VColorData, 8> color =
-	{
-		VColorData{XMFLOAT4(Colors::White) },
-		VColorData{XMFLOAT4(Colors::Black) },
-		VColorData{XMFLOAT4(Colors::Red) },
-		VColorData{XMFLOAT4(Colors::Green) },
-		VColorData{XMFLOAT4(Colors::Blue) },
-		VColorData{XMFLOAT4(Colors::Yellow) },
-		VColorData{XMFLOAT4(Colors::Cyan) },
-		VColorData{XMFLOAT4(Colors::Magenta) }
-	};
-
-	std::array<std::uint16_t, 36> indices =
+	std::array<std::uint16_t, 18> indices =
 	{
 		// front face
 		0, 1, 2,
-		0, 2, 3,
 
 		// back face
-		4, 6, 5,
-		4, 7, 6,
+		0,4,3,
 
 		// left face
-		4, 5, 1,
-		4, 1, 0,
+		0,4,1,
 
 		// right face
-		3, 2, 6,
-		3, 6, 7,
-
-		// top face
-		1, 5, 6,
-		1, 6, 2,
+		0,2,3,
 
 		// bottom face
-		4, 0, 3,
-		4, 3, 7
+		1,2,4,
+		2,3,4,
 	};
 
-	const UINT posByteSize = (UINT)pos.size() * sizeof(VPosData);
-	const UINT colorByteSize = (UINT)color.size() * sizeof(VColorData);
-	const UINT indexByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-	ComPtr<ID3D12Resource> VertexPosBufferGPU = nullptr;
-	ComPtr<ID3D12Resource> VertexPosBufferUploader = nullptr;
-	
+	mTriangleGeo = std::make_unique<MeshGeometry>();
+	mTriangleGeo->Name = "TriangleGeo";
 
-	ComPtr<ID3D12Resource> VertexColorBufferGPU = nullptr;
-	ComPtr<ID3D12Resource> VertexColorBufferUploader = nullptr;
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mTriangleGeo->VertexBufferCPU));
+	CopyMemory(mTriangleGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
-	ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
-	ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mTriangleGeo->IndexBufferCPU));
+	CopyMemory(mTriangleGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-	VertexPosBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(), mCommandList.Get(), pos.data(), posByteSize, VertexPosBufferUploader);
-	VertexColorBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(), mCommandList.Get(), color.data(), colorByteSize, VertexColorBufferUploader);
-	IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(), mCommandList.Get(), indices.data(), indexByteSize, IndexBufferUploader);
+	mTriangleGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), vertices.data(), vbByteSize, mTriangleGeo->VertexBufferUploader);
 
+	mTriangleGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), indices.data(), ibByteSize, mTriangleGeo->IndexBufferUploader);
 
-	D3D12_VERTEX_BUFFER_VIEW vbvPos;
-	vbvPos.BufferLocation = VertexPosBufferGPU->GetGPUVirtualAddress();
-	vbvPos.StrideInBytes = sizeof(VPosData);
-	vbvPos.SizeInBytes = 8 * sizeof(VPosData);
+	mTriangleGeo->VertexByteStride = sizeof(Vertex);
+	mTriangleGeo->VertexBufferByteSize = vbByteSize;
+	mTriangleGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
+	mTriangleGeo->IndexBufferByteSize = ibByteSize;
 
-	D3D12_VERTEX_BUFFER_VIEW vbvColor;
-	vbvColor.BufferLocation = VertexColorBufferGPU->GetGPUVirtualAddress();
-	vbvColor.StrideInBytes = sizeof(VColorData);
-	vbvColor.SizeInBytes = 8 * sizeof(VColorData);
+	SubmeshGeometry submesh;
+	submesh.IndexCount = (UINT)indices.size();
+	submesh.StartIndexLocation = 0;
+	submesh.BaseVertexLocation = 0;
 
-	ibv.BufferLocation = IndexBufferGPU->GetGPUVirtualAddress();
-	ibv.Format = DXGI_FORMAT_R16_UINT;
-	ibv.SizeInBytes = indexByteSize;
-	
-	vertexBuffer[0] = vbvPos;
-	vertexBuffer[1] = vbvColor;
+	mTriangleGeo->DrawArgs["triangle"] = submesh;
 }
