@@ -27,3 +27,14 @@ Chapter 6 Drawing in Direct3D/Box/x64/Debug/GameTimer.obj
 Chapter 6 Drawing in Direct3D/Box/x64/Debug/MathHelper.obj
 Chapter 6 Drawing in Direct3D/Box/x64/Debug/vc142.idb
 Chapter 6 Drawing in Direct3D/Box/x64/Debug/vc142.pdb
+*.ipch
+*.asm
+*.tlog
+*.obj
+*.exe
+*.ilk
+*.log
+*.pdb
+Chapter 7 Drawing in Direct3D Part II/LandAndWaves/x64/Debug/LandAndWaves.vcxproj.FileListAbsolute.txt
+*.idb
+Chapter 7 Drawing in Direct3D Part II/Shapes/x64/Debug/Shapes.vcxproj.FileListAbsolute.txt
