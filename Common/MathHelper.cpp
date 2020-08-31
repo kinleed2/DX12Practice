@@ -18,7 +18,7 @@ float MathHelper::AngleFromXY(float x, float y)
 	// Quadrant I or IV
 	if(x >= 0.0f) 
 	{
-		// If x = 0, then atanf(y/x) = +pi/2 if y > 0
+		// If x = 0, then atanf(y/x) = +pi/2 if y > 011111
 		//                atanf(y/x) = -pi/2 if y < 0
 		theta = atanf(y / x); // in [-pi/2, +pi/2]
 
