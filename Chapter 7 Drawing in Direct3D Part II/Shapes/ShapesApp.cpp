@@ -81,6 +81,10 @@ private:
     void BuildRenderItems();
     void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
  
+    //TODO: Practice 2
+    void BuildRootSignaturePractice();
+    //
+
 private:
 
     std::vector<std::unique_ptr<FrameResource>> mFrameResources;
@@ -164,6 +168,10 @@ bool ShapesApp::Initialize()
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
     BuildRootSignature();
+    
+    //TODO: Practice 2
+    //BuildRootSignaturePractice();
+
     BuildShadersAndInputLayout();
     BuildShapeGeometry();
     BuildRenderItems();
@@ -474,6 +482,19 @@ void ShapesApp::BuildConstantBufferViews()
     }
 }
 
+// Practice 2
+void ShapesApp::BuildRootSignaturePractice()
+{
+    CD3DX12_ROOT_PARAMETER slotRootParameter[1];
+    slotRootParameter[0].InitAsConstants(16, 0);
+    
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(1, slotRootParameter, 0, nullptr, 
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+}
+
+//
+
 void ShapesApp::BuildRootSignature()
 {
     CD3DX12_DESCRIPTOR_RANGE cbvTable0;
@@ -529,7 +550,11 @@ void ShapesApp::BuildShapeGeometry()
     GeometryGenerator geoGen;
 	GeometryGenerator::MeshData box = geoGen.CreateBox(1.5f, 0.5f, 1.5f, 3);
 	GeometryGenerator::MeshData grid = geoGen.CreateGrid(20.0f, 30.0f, 60, 40);
-	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
+	//GeometryGenerator::MeshData sphere = geoGen.CreateSphere(0.5f, 20, 20);
+    //TODO: Practice 1
+    GeometryGenerator::MeshData sphere = geoGen.CreateGeosphere(0.5f, 4);
+    //
+
 	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(0.5f, 0.3f, 3.0f, 20, 20);
 
 	//
@@ -799,6 +824,10 @@ void ShapesApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::v
         cbvHandle.Offset(cbvIndex, mCbvSrvUavDescriptorSize);
 
         cmdList->SetGraphicsRootDescriptorTable(0, cbvHandle);
+        //TODO: Practice 2
+        //cmdList->SetGraphicsRoot32BitConstants(0, 16, &cbvHandle, 0);
+        //
+
 
         cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
     }
